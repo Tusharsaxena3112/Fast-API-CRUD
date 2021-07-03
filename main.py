@@ -3,12 +3,16 @@ from fastapi import FastAPI
 app = FastAPI()
 
 
-@app.get('/')
-def index():
-    return {"data": {
-        "page": "Home",
-        "message": "Welcome to the Website"
-    }}
+@app.get('/blogs')
+def index(limit: int = 10, published: bool = True):
+    if published:
+        return {"data": {
+            "page": f"{limit} Published Blogs",
+        }}
+    else:
+        return {"data": {
+            "page": f"{limit} All Blogs",
+        }}
 
 
 @app.get('/blog/{id}')
