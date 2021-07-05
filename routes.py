@@ -18,7 +18,7 @@ def get_db():
 
 # Read All the blogs
 @app.get('/blogs', status_code=status.HTTP_200_OK)
-def index(response: Response, db: Session = Depends(get_db)):
+def read_blogs(response: Response, db: Session = Depends(get_db)):
     blogs = db.query(models.Blog).all()
     if blogs:
         response.status_code = status.HTTP_200_OK
@@ -49,7 +49,7 @@ def post_blog(blog: schemas.Blog, db: Session = Depends(get_db)):
 
 
 # Delete a blog from the database
-@app.delete('/blog/{id}')
+@app.delete('/blog/{id}', status_code=status.HTTP_202_ACCEPTED)
 def delete_blog(id: int, db: Session = Depends(get_db)):
     blog = db.query(models.Blog).filter(models.Blog.id == id)
     if not blog:
@@ -62,9 +62,10 @@ def delete_blog(id: int, db: Session = Depends(get_db)):
 # Updating a pre-existing blog
 @app.put('/blog/{id}')
 def update_blog(id: int, blog: schemas.Blog, db: Session = Depends(get_db)):
-    blog = db.query(models.Blog).filter(models.Blog.id == id)
-    if not blog:
+    blogs = db.query(models.Blog).filter(models.Blog.id == id)
+    if not blogs:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, details=f"Blog with id {id} is not found")
-    blog.update(blog, synchronize_session=False)
+    blogs.update(vars(blog))
+    # vars is used to convert an object into dict
     db.commit()
     return {"message": "Updated Successfully"}
