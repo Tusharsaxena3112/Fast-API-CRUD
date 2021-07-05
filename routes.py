@@ -1,3 +1,4 @@
+from typing import List
 from fastapi import FastAPI, Depends, status, Response, HTTPException
 import models
 from database import engine, SessionLocal
@@ -17,7 +18,7 @@ def get_db():
 
 
 # Read All the blogs
-@app.get('/blogs', status_code=status.HTTP_200_OK)
+@app.get('/blogs', status_code=status.HTTP_200_OK, response_model=List[schemas.ShowBlog])
 def read_blogs(response: Response, db: Session = Depends(get_db)):
     blogs = db.query(models.Blog).all()
     if blogs:
@@ -28,7 +29,7 @@ def read_blogs(response: Response, db: Session = Depends(get_db)):
 
 
 # Read a particular blog with particular id
-@app.get('/blog/{id}', status_code=status.HTTP_200_OK)
+@app.get('/blog/{id}', status_code=status.HTTP_200_OK, response_model=schemas.ShowBlog)
 def get_blog(id: int, response: Response, db: Session = Depends(get_db)):
     blogs = db.query(models.Blog).filter(models.Blog.id == id).first()
     if not blogs:
@@ -39,7 +40,7 @@ def get_blog(id: int, response: Response, db: Session = Depends(get_db)):
 
 
 # Post a blog to the database
-@app.post('/blog', status_code=status.HTTP_201_CREATED)
+@app.post('/blog', status_code=status.HTTP_201_CREATED, response_model=schemas.ShowBlog)
 def post_blog(blog: schemas.Blog, db: Session = Depends(get_db)):
     new_blog = models.Blog(title=blog.title, author=blog.title, body=blog.body)
     db.add(new_blog)
@@ -64,7 +65,7 @@ def delete_blog(id: int, db: Session = Depends(get_db)):
 def update_blog(id: int, blog: schemas.Blog, db: Session = Depends(get_db)):
     blogs = db.query(models.Blog).filter(models.Blog.id == id)
     if not blogs:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, details=f"Blog with id {id} is not found")
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"Blog with id {id} is not found")
     blogs.update(vars(blog))
     # vars is used to convert an object into dict
     db.commit()
