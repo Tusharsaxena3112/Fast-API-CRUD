@@ -19,7 +19,7 @@ def get_db():
 
 
 # Read All the blogs
-@app.get('/blogs', status_code=status.HTTP_200_OK, response_model=List[schemas.ShowBlog])
+@app.get('/blogs', status_code=status.HTTP_200_OK, response_model=List[schemas.ShowBlog], tags=["Blogs"])
 def read_blogs(response: Response, db: Session = Depends(get_db)):
     blogs = db.query(models.Blog).all()
     if blogs:
@@ -30,7 +30,7 @@ def read_blogs(response: Response, db: Session = Depends(get_db)):
 
 
 # Read a particular blog with particular id
-@app.get('/blog/{id}', status_code=status.HTTP_200_OK, response_model=schemas.ShowBlog)
+@app.get('/blog/{id}', status_code=status.HTTP_200_OK, response_model=schemas.ShowBlog, tags=["Blogs"])
 def get_blog(id: int, response: Response, db: Session = Depends(get_db)):
     blogs = db.query(models.Blog).filter(models.Blog.id == id).first()
     if not blogs:
@@ -41,7 +41,7 @@ def get_blog(id: int, response: Response, db: Session = Depends(get_db)):
 
 
 # Post a blog to the database
-@app.post('/blog', status_code=status.HTTP_201_CREATED, response_model=schemas.ShowBlog)
+@app.post('/blog', status_code=status.HTTP_201_CREATED, response_model=schemas.ShowBlog, tags=["Blogs"])
 def post_blog(blog: schemas.Blog, db: Session = Depends(get_db)):
     new_blog = models.Blog(title=blog.title, author=blog.title, body=blog.body)
     db.add(new_blog)
@@ -51,7 +51,7 @@ def post_blog(blog: schemas.Blog, db: Session = Depends(get_db)):
 
 
 # Delete a blog from the database
-@app.delete('/blog/{id}', status_code=status.HTTP_202_ACCEPTED)
+@app.delete('/blog/{id}', status_code=status.HTTP_202_ACCEPTED, tags=["Blogs"])
 def delete_blog(id: int, db: Session = Depends(get_db)):
     blog = db.query(models.Blog).filter(models.Blog.id == id)
     if not blog:
@@ -62,7 +62,7 @@ def delete_blog(id: int, db: Session = Depends(get_db)):
 
 
 # Updating a pre-existing blog
-@app.put('/blog/{id}')
+@app.put('/blog/{id}', tags=["Blogs"])
 def update_blog(id: int, blog: schemas.Blog, db: Session = Depends(get_db)):
     blogs = db.query(models.Blog).filter(models.Blog.id == id)
     if not blogs:
@@ -73,7 +73,7 @@ def update_blog(id: int, blog: schemas.Blog, db: Session = Depends(get_db)):
     return {"message": "Updated Successfully"}
 
 
-@app.get('/users', response_model=List[schemas.ShowUser])
+@app.get('/users', response_model=List[schemas.ShowUser], tags=["Users"])
 def get_users(db: Session = Depends(get_db)):
     users = db.query(models.User).all()
     if not users:
@@ -82,7 +82,7 @@ def get_users(db: Session = Depends(get_db)):
         return users
 
 
-@app.get('/users/{id}', response_model=schemas.ShowUser)
+@app.get('/users/{id}', response_model=schemas.ShowUser, tags=["Users"])
 def get_user(id: int, db: Session = Depends(get_db)):
     users = db.query(models.User).filter(models.User.id == id).first()
     if not users:
@@ -95,7 +95,7 @@ def get_user(id: int, db: Session = Depends(get_db)):
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
-@app.post('/users', response_model=schemas.ShowUser)
+@app.post('/users', response_model=schemas.ShowUser, tags=["Users"])
 def create_user(user: schemas.User, db: Session = Depends(get_db)):
     hashed_password = pwd_context.hash(user.password)
     new_user = models.User(name=user.userName, email=user.email, password=hashed_password)
@@ -103,3 +103,13 @@ def create_user(user: schemas.User, db: Session = Depends(get_db)):
     db.commit()
     db.refresh(new_user)
     return new_user
+
+
+@app.delete('/user/{id}', status_code=status.HTTP_202_ACCEPTED, tags=["Users"])
+def delete_user(id: int, db: Session = Depends(get_db)):
+    users = db.query(models.User).filter(models.User.id == id)
+    if not users:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=f"User with id {id} is not available")
+    users.delete(synchronize_session=False)
+    db.commit()
+    return {"message": "Deleted Successfully"}
