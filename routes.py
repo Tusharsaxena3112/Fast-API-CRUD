@@ -4,6 +4,7 @@ import models
 from database import engine, SessionLocal
 import schemas
 from sqlalchemy.orm import Session
+from passlib.context import CryptContext
 
 app = FastAPI()
 models.Base.metadata.create_all(bind=engine)
@@ -70,3 +71,35 @@ def update_blog(id: int, blog: schemas.Blog, db: Session = Depends(get_db)):
     # vars is used to convert an object into dict
     db.commit()
     return {"message": "Updated Successfully"}
+
+
+@app.get('/users', response_model=List[schemas.ShowUser])
+def get_users(db: Session = Depends(get_db)):
+    users = db.query(models.User).all()
+    if not users:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No users Exists")
+    else:
+        return users
+
+
+@app.get('/users/{id}', response_model=schemas.ShowUser)
+def get_user(id: int, db: Session = Depends(get_db)):
+    users = db.query(models.User).filter(models.User.id == id).first()
+    if not users:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="User is not registered, kindly register first")
+    else:
+        return users
+
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+
+@app.post('/users', response_model=schemas.ShowUser)
+def create_user(user: schemas.User, db: Session = Depends(get_db)):
+    hashed_password = pwd_context.hash(user.password)
+    new_user = models.User(name=user.userName, email=user.email, password=hashed_password)
+    db.add(new_user)
+    db.commit()
+    db.refresh(new_user)
+    return new_user
