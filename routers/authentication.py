@@ -1,13 +1,12 @@
+import tokens
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from passlib.context import CryptContext
-
 import models
 import schemas
 import database
 
 router = APIRouter()
-
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
@@ -18,4 +17,5 @@ def login(request: schemas.Login, db: Session = Depends(database.get_db)):
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exists, register first")
     if not pwd_context.verify(request.password, user.password):
         raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Incorrect Password")
-    return request
+    access_token = tokens.create_access_token(data={"sub": user.name})
+    return {"access_token": access_token, "token_type": "bearer"}
