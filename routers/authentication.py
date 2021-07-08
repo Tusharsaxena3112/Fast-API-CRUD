@@ -1,3 +1,4 @@
+from fastapi.security.oauth2 import OAuth2PasswordRequestForm
 import tokens
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
@@ -11,7 +12,7 @@ pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
 
 @router.post('/login', tags=["Authentication"])
-def login(request: schemas.Login, db: Session = Depends(database.get_db)):
+def login(request: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(database.get_db)):
     user = db.query(models.User).filter(request.username == models.User.name).first()
     if not user:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User does not exists, register first")
